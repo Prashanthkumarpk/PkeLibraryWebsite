@@ -36,27 +36,45 @@ function useMousePosition() {
   return { ...mousePosition, isHovering };
 }
 
+function useScrollReveal() {
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+}
+
 const GlassCard = ({ children, className = "", hover = true, interactive = false }) => (
   <div className={`
-    backdrop-blur-xl bg-white/40 border border-white/30 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.05)]
-    ${hover ? 'hover:bg-white/60 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-500' : ''}
-    ${interactive ? 'interactive' : ''}
+    backdrop-blur-xl bg-white/60 border border-white/60 rounded-[28px] shadow-[0_4px_24px_rgba(0,0,0,0.03)] relative overflow-hidden
+    ${hover ? 'hover:bg-white/90 hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:border-white transition-all duration-500' : ''}
+    ${interactive ? 'interactive hover:-translate-y-1' : ''}
     ${className}
   `}>
+    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
     {children}
   </div>
 );
 
 const Button = ({ children, variant = 'primary', className = '', onClick, href }) => {
-  const baseStyles = "relative px-6 py-4 rounded-2xl font-bold transition-all duration-500 flex items-center justify-center gap-2 overflow-hidden active:scale-95 z-10 w-full sm:w-auto font-jakarta interactive";
+  const baseStyles = "relative px-6 py-4 rounded-2xl font-bold transition-all duration-500 flex items-center justify-center gap-2 overflow-hidden active:scale-95 z-10 w-full sm:w-auto font-jakarta interactive group";
+  const highlight = <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out z-0 rounded-2xl"></div>;
+  
   const variants = {
-    primary: `bg-[#6B1D1D] text-white shadow-lg shadow-[#6B1D1D]/20 hover:-translate-y-1`,
-    gold: `bg-[#F5B700] text-[#111111] shadow-lg shadow-[#F5B700]/20 hover:-translate-y-1`,
-    glass: `backdrop-blur-md bg-white/20 border border-white/30 text-[#111111] hover:bg-white/40`,
-    outline: `border-2 border-gray-200 text-[#111111] hover:border-[#6B1D1D] hover:text-[#6B1D1D] bg-white/50`,
+    primary: `bg-[#6B1D1D] text-white shadow-md shadow-[#6B1D1D]/20 hover:shadow-xl hover:shadow-[#6B1D1D]/30 border border-[#6B1D1D]/50`,
+    gold: `bg-[#F5B700] text-[#111111] shadow-md shadow-[#F5B700]/20 hover:shadow-xl hover:shadow-[#F5B700]/30 border border-[#F5B700]/50`,
+    glass: `backdrop-blur-md bg-white/20 border border-white/40 text-[#111111] hover:bg-white/50`,
+    outline: `border-2 border-gray-200 text-gray-700 hover:border-[#6B1D1D] hover:text-[#6B1D1D] bg-white/50 hover:bg-white`,
   };
 
-  const content = <span className="flex items-center gap-2">{children}</span>;
+  const content = <><span className="flex items-center gap-2 z-10 relative">{children}</span>{(variant === 'primary' || variant === 'gold') && highlight}</>;
 
   if (href) {
     return <a href={href} className={`${baseStyles} ${variants[variant]} ${className}`}>{content}</a>;
@@ -65,8 +83,8 @@ const Button = ({ children, variant = 'primary', className = '', onClick, href }
 };
 
 const SectionHeader = ({ badge, title, subtitle, centered = true }) => (
-  <div className={`mb-16 space-y-4 ${centered ? 'text-center' : 'text-left'}`}>
-    <span className="inline-block px-4 py-1.5 bg-[#6B1D1D]/5 text-[#6B1D1D] rounded-full text-xs font-black uppercase tracking-widest border border-[#6B1D1D]/10">
+  <div className={`mb-16 space-y-4 reveal ${centered ? 'text-center' : 'text-left'}`}>
+    <span className="inline-block px-4 py-1.5 bg-[#6B1D1D]/5 text-[#6B1D1D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#6B1D1D]/10">
       {badge}
     </span>
     <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#111111] tracking-tight leading-tight">{title}</h2>
@@ -77,8 +95,8 @@ const SectionHeader = ({ badge, title, subtitle, centered = true }) => (
 const Marquee = () => {
   const text = "FREE RESOURCES • ELITE MENTORSHIP • OPEN TO ALL • ZERO COST • ";
   return (
-    <div className="w-full bg-[#6B1D1D] text-white py-6 overflow-hidden relative border-y border-[#6B1D1D]/20 -rotate-1 scale-105 z-40 my-16 shadow-xl">
-      <div className="animate-marquee whitespace-nowrap text-2xl md:text-4xl font-black uppercase tracking-[0.15em] opacity-90">
+    <div className="w-full bg-[#6B1D1D] text-white py-5 overflow-hidden relative border-y border-[#6B1D1D]/20 -rotate-1 scale-105 z-40 my-16 shadow-xl reveal">
+      <div className="animate-marquee whitespace-nowrap text-xl md:text-3xl font-black uppercase tracking-[0.15em] opacity-90">
         {text.repeat(10)}
       </div>
     </div>
@@ -89,8 +107,9 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { x, y, isHovering } = useMousePosition();
+  
+  useScrollReveal();
 
-  // Sync nav links in one place
   const navLinks = ['Home', 'Impact', 'Initiatives', 'Resources', 'Blogs', 'Contact'];
 
   useEffect(() => {
@@ -193,16 +212,16 @@ export default function App() {
                 <span className="text-[10px] font-black text-[#6B1D1D] uppercase tracking-[0.2em]">Live Mentorship Open</span>
               </div>
 
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[0.9] text-[#111111]">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[0.9] text-[#111111] animate-slide-up" style={{animationDelay: '100ms'}}>
                 Guidance.<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6B1D1D] via-[#6B1D1D] to-[#F5B700]">Evolutionary.</span>
               </h1>
 
-              <p className="text-lg md:text-xl text-gray-500 leading-relaxed font-medium max-w-xl mx-auto lg:mx-0">
+              <p className="text-lg md:text-xl text-gray-500 leading-relaxed font-medium max-w-xl mx-auto lg:mx-0 animate-slide-up" style={{animationDelay: '200ms'}}>
                 PkeLibrary Foundation is an elite student initiative delivering premium study materials and mentorship at zero cost.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-slide-up" style={{animationDelay: '300ms'}}>
                 <Button variant="primary" className="h-16 px-10 text-lg shadow-2xl">
                   Get Started <ArrowRight size={22} />
                 </Button>
@@ -211,7 +230,7 @@ export default function App() {
                 </Button>
               </div>
 
-              <div className="flex items-center justify-center lg:justify-start gap-8 pt-6">
+              <div className="flex items-center justify-center lg:justify-start gap-8 pt-6 animate-slide-up" style={{animationDelay: '400ms'}}>
                 <div className="flex -space-x-3">
                   {[1, 2, 3, 4].map(i => (
                     <img key={i} src={`https://i.pravatar.cc/100?img=${i+45}`} className="w-12 h-12 rounded-full border-4 border-white shadow-md interactive" alt="User" />
@@ -225,8 +244,8 @@ export default function App() {
               </div>
             </div>
 
-            <div className="w-full lg:w-2/5 relative interactive">
-              <div className="bg-white/50 backdrop-blur-lg p-3 rounded-[40px] border border-white/60 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-700">
+            <div className="w-full lg:w-2/5 relative interactive animate-slide-up" style={{animationDelay: '200ms'}}>
+              <div className="bg-white/60 backdrop-blur-xl p-3 rounded-[40px] border border-white/60 shadow-[0_20px_60px_rgba(0,0,0,0.08)] rotate-2 hover:rotate-0 transition-transform duration-700">
                 <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop" className="rounded-[32px] w-full aspect-[4/5] object-cover shadow-inner" alt="Hero" />
                 <div className="absolute -bottom-6 -right-6 bg-white/90 backdrop-blur-2xl p-6 rounded-[28px] shadow-2xl border border-white hidden md:block animate-float">
                   <div className="flex items-center gap-4">
@@ -257,7 +276,7 @@ export default function App() {
               { val: "50+", label: "Regions", icon: <Globe className="text-emerald-500" /> },
               { val: "10K+", label: "Successes", icon: <Award className="text-[#F5B700]" /> }
             ].map((stat, i) => (
-              <GlassCard key={i} className="p-8 text-center flex flex-col items-center group" interactive={true}>
+              <GlassCard key={i} className={`p-8 text-center flex flex-col items-center group reveal reveal-delay-${(i % 4) * 100}`} interactive={true}>
                 <div className="w-14 h-14 rounded-2xl bg-white shadow-md flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   {stat.icon}
                 </div>
@@ -270,7 +289,7 @@ export default function App() {
       </section>
 
       {/* Ongoing Initiatives */}
-      <section id="initiatives" className="py-24 px-6 bg-gray-50/50">
+      <section id="initiatives" className="py-24 px-6 bg-white/50 border-y border-white">
         <div className="max-w-7xl mx-auto">
           <SectionHeader 
             badge="Live Impact" 
@@ -299,11 +318,11 @@ export default function App() {
                 tag: "Mental Wellness"
               }
             ].map((init, i) => (
-              <GlassCard key={i} className="p-10 flex flex-col items-start text-left h-full group" interactive={true}>
-                <div className="w-16 h-16 rounded-[24px] bg-white shadow-xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+              <GlassCard key={i} className={`p-10 flex flex-col items-start text-left h-full group reveal reveal-delay-${i * 100}`} interactive={true}>
+                <div className="w-16 h-16 rounded-[24px] bg-white shadow-lg flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                    {React.cloneElement(init.icon, { size: 32 })}
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#6B1D1D] bg-[#6B1D1D]/5 px-3 py-1 rounded-full mb-4 font-jakarta">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#6B1D1D] bg-[#6B1D1D]/5 px-3 py-1 rounded-full mb-4 font-jakarta border border-[#6B1D1D]/10">
                   {init.tag}
                 </span>
                 <h3 className="text-3xl font-black mb-4">{init.title}</h3>
@@ -318,10 +337,10 @@ export default function App() {
       </section>
 
       {/* Guiding Principles */}
-      <section id="principles" className="py-24 px-6 bg-[#111111] rounded-[64px] mx-4 relative overflow-hidden">
+      <section id="principles" className="py-24 px-6 bg-[#111111] rounded-[64px] mx-4 relative overflow-hidden reveal">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#6B1D1D]/20 to-transparent" />
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-20 space-y-4">
+          <div className="text-center mb-20 space-y-4 reveal">
             <span className="text-[#F5B700] text-xs font-black uppercase tracking-[0.4em]">The Core Pillars</span>
             <h2 className="text-4xl md:text-6xl font-black text-white">Our Guiding Principles</h2>
           </div>
@@ -334,7 +353,7 @@ export default function App() {
               { title: "Emotional Well-being", icon: <BrainCircuit />, color: "text-purple-500", desc: "Mental health comes first." },
               { title: "Rural Empowerment", icon: <Sprout />, color: "text-emerald-500", desc: "Bridging the village-tech divide." }
             ].map((item, i) => (
-              <div key={i} className="bg-white/5 backdrop-blur-md border border-white/10 p-10 rounded-[40px] text-center group hover:bg-white/10 transition-all interactive">
+              <div key={i} className={`bg-white/5 backdrop-blur-md border border-white/10 p-10 rounded-[40px] text-center group hover:bg-white/10 transition-all interactive reveal reveal-delay-${i * 100}`}>
                 <div className={`w-16 h-16 mx-auto mb-8 rounded-[24px] bg-white/5 flex items-center justify-center ${item.color} shadow-lg group-hover:scale-110 transition-transform`}>
                   {React.cloneElement(item.icon, { size: 32 })}
                 </div>
@@ -349,7 +368,7 @@ export default function App() {
       {/* Resources Hub */}
       <section id="resources" className="py-32 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-20">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-20 reveal">
             <div className="space-y-4 max-w-xl">
               <span className="text-[#6B1D1D] text-xs font-black uppercase tracking-[0.3em]">Resource Vault</span>
               <h2 className="text-4xl md:text-6xl font-black tracking-tight">The Student Intel Hub.</h2>
@@ -367,7 +386,7 @@ export default function App() {
               { title: "Career Maps", count: "Step-by-step", icon: <Compass className="text-rose-500" /> },
               { title: "AI Daily", count: "Trends Intel", icon: <BrainCircuit className="text-orange-500" /> }
             ].map((item, i) => (
-              <GlassCard key={i} className="p-10 flex flex-col group cursor-pointer" interactive={true}>
+              <GlassCard key={i} className={`p-10 flex flex-col group cursor-pointer reveal reveal-delay-${(i % 3) * 100}`} interactive={true}>
                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
                    {React.cloneElement(item.icon, { size: 32 })}
                 </div>
@@ -383,12 +402,12 @@ export default function App() {
       </section>
 
       {/* Blogs / AI Trends */}
-      <section id="blogs" className="py-24 px-6 bg-[#FAFAFA] border-y border-gray-100 relative">
+      <section id="blogs" className="py-24 px-6 bg-[#FAFAFA] border-y border-gray-100 relative reveal">
         <div className="max-w-7xl mx-auto">
-          <GlassCard className="p-12 lg:p-20 overflow-hidden relative" hover={false}>
+          <GlassCard className="p-12 lg:p-20 overflow-hidden relative border-white" hover={false}>
              <div className="absolute top-0 right-0 w-64 h-64 bg-[#F5B700]/10 rounded-full blur-3xl -z-10" />
              <div className="grid lg:grid-cols-2 gap-20 items-center">
-                <div className="space-y-10">
+                <div className="space-y-10 reveal">
                    <div className="inline-block px-4 py-1.5 bg-[#111111] text-[#F5B700] rounded-full text-[10px] font-black uppercase tracking-widest">The Daily Intel</div>
                    <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">AI Trends.<br/><span className="text-[#6B1D1D]">Read Everyday.</span></h2>
                    <p className="text-xl text-gray-500 font-medium leading-relaxed font-jakarta">
@@ -399,14 +418,14 @@ export default function App() {
                    </Button>
                 </div>
                 <div className="space-y-6">
-                   <div className="p-8 bg-white rounded-[32px] shadow-sm border border-gray-100 hover:shadow-xl transition-all cursor-pointer group interactive">
+                   <div className="p-8 bg-white/60 backdrop-blur-md rounded-[32px] shadow-sm border border-white hover:shadow-xl hover:bg-white transition-all cursor-pointer group interactive reveal reveal-delay-100">
                       <div className="flex gap-4 items-center mb-4">
                         <Clock size={16} className="text-gray-400" /> <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">3 Min Read</span>
                       </div>
                       <h4 className="text-2xl font-black mb-2 group-hover:text-[#6B1D1D] transition-colors">The 2026 Developer Roadmap.</h4>
                       <p className="text-gray-500 font-medium font-jakarta">How to navigate the AI-led engineering era and stay relevant.</p>
                    </div>
-                   <div className="p-8 bg-white rounded-[32px] shadow-sm border border-gray-100 hover:shadow-xl transition-all cursor-pointer group interactive">
+                   <div className="p-8 bg-white/60 backdrop-blur-md rounded-[32px] shadow-sm border border-white hover:shadow-xl hover:bg-white transition-all cursor-pointer group interactive reveal reveal-delay-200">
                       <div className="flex gap-4 items-center mb-4">
                         <Clock size={16} className="text-gray-400" /> <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">5 Min Read</span>
                       </div>
@@ -429,7 +448,7 @@ export default function App() {
               { name: "Priya Das", role: "Final Year Student", text: "Finally a place where I found quality subject notes for free. Saved my exams!" },
               { name: "Siddharth M", role: "Intern @ Google", text: "The mentorship sessions are elite. It feels like a premium program but it's free." }
             ].map((t, i) => (
-              <GlassCard key={i} className="p-12 flex flex-col justify-between" interactive={true}>
+              <GlassCard key={i} className={`p-12 flex flex-col justify-between reveal reveal-delay-${(i % 3) * 100}`} interactive={true}>
                 <div>
                   <div className="flex gap-1 mb-8 text-[#F5B700]">
                     {[...Array(5)].map((_, j) => <Star key={j} size={18} fill="currentColor" />)}
@@ -452,7 +471,7 @@ export default function App() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-28 px-6 bg-white">
+      <section id="contact" className="py-28 px-6 bg-white reveal">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-20 items-center">
             <div className="space-y-12">
@@ -463,7 +482,7 @@ export default function App() {
                   { icon: <Phone />, label: "Support", value: "+91 99887 76655" },
                   { icon: <MapPin />, label: "Location", value: "India" }
                 ].map((item, i) => (
-                  <div key={i} className="flex gap-6 items-center group cursor-pointer interactive">
+                  <div key={i} className={`flex gap-6 items-center group cursor-pointer interactive reveal reveal-delay-${i * 100}`}>
                     <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-[#6B1D1D] border border-gray-100 group-hover:bg-[#6B1D1D] group-hover:text-white transition-all duration-500 shadow-sm">
                       {item.icon}
                     </div>
@@ -476,7 +495,7 @@ export default function App() {
               </div>
             </div>
 
-            <form className="bg-gray-50 p-10 lg:p-14 rounded-[48px] border border-gray-100 space-y-6 shadow-2xl relative overflow-hidden group">
+            <form className="bg-gray-50 p-10 lg:p-14 rounded-[48px] border border-gray-100 space-y-6 shadow-[0_24px_60px_rgba(0,0,0,0.05)] relative overflow-hidden group reveal reveal-delay-200">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#F5B700]/10 rounded-full translate-x-1/2 -translate-y-1/2 blur-2xl -z-10" />
               <div className="grid md:grid-cols-2 gap-6">
                  <input placeholder="First Name" className="w-full bg-white px-6 py-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-[#6B1D1D] outline-none font-bold font-jakarta" />
@@ -494,7 +513,7 @@ export default function App() {
       <footer className="bg-[#111111] text-white pt-32 pb-16 relative overflow-hidden rounded-t-[80px]">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-20 mb-20">
-             <div className="space-y-10">
+             <div className="space-y-10 reveal">
                 <div className="flex items-center interactive">
                   <div className="bg-white p-3 rounded-[24px] shadow-lg hover:scale-105 transition-transform duration-500 ease-out">
                     <img 
@@ -514,7 +533,7 @@ export default function App() {
                 </div>
              </div>
              
-             <div>
+             <div className="reveal reveal-delay-100">
                <h4 className="font-black mb-10 uppercase tracking-[0.3em] text-xs opacity-40">Resources</h4>
                <ul className="space-y-6 text-md font-bold text-gray-400 font-jakarta">
                  {['Home', 'Impact', 'Initiatives', 'Intel Hub'].map(item => (
@@ -523,7 +542,7 @@ export default function App() {
                </ul>
              </div>
 
-             <div>
+             <div className="reveal reveal-delay-200">
                <h4 className="font-black mb-10 uppercase tracking-[0.3em] text-xs opacity-40">Join Us</h4>
                <ul className="space-y-6 text-md font-bold text-gray-400 font-jakarta">
                  {['WhatsApp Group', 'Telegram', 'Alumni Network', 'Partner Program'].map(item => (
@@ -532,14 +551,14 @@ export default function App() {
                </ul>
              </div>
 
-             <GlassCard className="p-8 h-fit border-white/10" hover={false}>
+             <GlassCard className="p-8 h-fit border-white/10 reveal reveal-delay-300" hover={false}>
                <h4 className="text-xl font-black mb-4">Support Mission</h4>
                <p className="text-xs text-gray-400 font-medium mb-8 font-jakarta">We are non-profit and run by volunteers. Help us keep education free.</p>
                <Button variant="gold" className="w-full text-xs py-4 h-14">Get Involved</Button>
              </GlassCard>
           </div>
           
-          <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-10">
+          <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-10 reveal">
             <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">© 2026 PKELIBRARY FOUNDATION. ALL RIGHTS RESERVED.</p>
             <div className="flex gap-12 text-[10px] font-black text-gray-600 uppercase tracking-widest">
               <a href="#" className="hover:text-white transition-colors interactive">Privacy</a>
