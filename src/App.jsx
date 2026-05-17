@@ -160,7 +160,7 @@ export default function App() {
         <div className={`max-w-7xl mx-auto flex items-center justify-between py-1.5 px-3 md:py-2 md:px-4 rounded-[32px] border transition-all duration-700 ${scrolled ? 'bg-white/60 backdrop-blur-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.06)] border-white/40' : 'bg-transparent border-transparent'}`}>
           <div className="flex items-center px-2 cursor-pointer group interactive" onClick={() => scrollTo('home')}>
             <img 
-              src="/logo.png" 
+              src={`${import.meta.env.BASE_URL}logo.png`}
               alt="PkeLibrary Foundation" 
               className="h-10 md:h-12 w-auto object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500 ease-out" 
             />
@@ -565,7 +565,7 @@ export default function App() {
                 <div className="flex items-center interactive">
                   <div className="bg-white p-3 rounded-[24px] shadow-lg hover:scale-105 transition-transform duration-500 ease-out">
                     <img 
-                      src="/logo.png" 
+                      src={`${import.meta.env.BASE_URL}logo.png`}
                       alt="PkeLibrary Foundation" 
                       className="h-16 w-auto object-contain" 
                     />
